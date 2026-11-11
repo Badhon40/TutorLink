@@ -1,0 +1,362 @@
+
+// use prisma-8
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum Role {
+  @@type("pg/text@1")
+
+  STUDENT = "STUDENT"
+  TUTOR   = "TUTOR"
+  ADMIN   = "ADMIN"
+}
+
+enum BookingStatus {
+  @@type("pg/text@1")
+
+  PENDING   = "PENDING"
+  CONFIRMED = "CONFIRMED"
+  COMPLETED = "COMPLETED"
+  CANCELLED = "CANCELLED"
+  REJECTED  = "REJECTED"
+}
+
+enum VerificationStatus {
+  @@type("pg/text@1")
+
+  PENDING = "PENDING"
+  APPROVED = "APPROVED"
+  REJECTED = "REJECTED"
+  RESUBMISSION_REQUIRED = "RESUBMISSION_REQUIRED"
+}
+
+enum VerificationAssessment {
+  @@type("pg/text@1")
+
+  LIKELY_VALID = "LIKELY_VALID"
+  LIKELY_INVALID = "LIKELY_INVALID"
+  UNCERTAIN = "UNCERTAIN"
+}
+
+enum PaymentStatus {
+  @@type("pg/text@1")
+
+  PENDING = "PENDING"
+  SUCCEEDED = "SUCCEEDED"
+  FAILED = "FAILED"
+  CANCELLED = "CANCELLED"
+}
+
+enum RefundStatus {
+  @@type("pg/text@1")
+
+  PENDING = "PENDING"
+  SUCCEEDED = "SUCCEEDED"
+  FAILED = "FAILED"
+}
+
+enum NotificationType {
+  @@type("pg/text@1")
+
+  BOOKING_UPDATE = "BOOKING_UPDATE"
+  PAYMENT_UPDATE = "PAYMENT_UPDATE"
+  VERIFICATION_UPDATE = "VERIFICATION_UPDATE"
+  SYSTEM = "SYSTEM"
+}
+
+// ==========================================
+// USER
+// ==========================================
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  username     String?  @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role     @default(STUDENT)
+  isActive     Boolean  @default(true)
+
+  studentProfile StudentProfile?
+  tutorProfile   TutorProfile?
+  verificationRequests         VerificationRequest[] @relation("VerificationOwner")
+reviewedVerificationRequests VerificationRequest[] @relation("VerificationReviewer")
+notifications                Notification[]
+payments                     Payment[]
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@map("users")
+}
+
+// ==========================================
+// STUDENT PROFILE
+// ==========================================
+
+model StudentProfile {
+  id              Int     @id @default(autoincrement())
+  userId          Int     @unique
+  institution     String?
+  department      String?
+  educationLevel  String?
+  location        String?
+  profileImage    String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+  reviews Review[]
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@map("student_profiles")
+}
+
+// ==========================================
+// TUTOR PROFILE
+// ==========================================
+
+model TutorProfile {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique
+  qualification   String?
+  institution     String?
+  department      String?
+  experienceYears Int      @default(0)
+  bio             String?
+  subjects        String[]
+  hourlyRate      Decimal
+  location        String?
+  profileImage    String?
+  accountNumber   String?
+  isVerified      Boolean  @default(false)
+  averageRating   Float    @default(0)
+  totalReviews    Int      @default(0)
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availability TutorAvailability[]
+  bookings     Booking[]
+  reviews      Review[]
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([location])
+  @@index([isVerified])
+  @@map("tutor_profiles")
+}
+
+// ==========================================
+// TUTOR AVAILABILITY
+// ==========================================
+
+model TutorAvailability {
+  id              Int     @id @default(autoincrement())
+  tutorProfileId  Int
+  dayOfWeek       Int
+  startTime       String
+  endTime         String
+  isAvailable     Boolean @default(true)
+
+  tutor TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([tutorProfileId, dayOfWeek])
+  @@map("tutor_availability")
+}
+
+// ==========================================
+// BOOKING
+// ==========================================
+
+model Booking {
+  id              Int           @id @default(autoincrement())
+  studentId       Int
+  tutorId         Int
+  startAt         DateTime
+  endAt           DateTime
+  durationMin     Int
+  hourlyRate      Decimal
+  totalAmount     Decimal
+  status          BookingStatus @default(PENDING)
+  studentMessage  String?
+  tutorMessage    String?
+  cancellationReason String?
+  payments Payment[]
+
+  student StudentProfile @relation(fields: [studentId], references: [id])
+  tutor   TutorProfile   @relation(fields: [tutorId], references: [id])
+
+  review Review?
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([studentId])
+  @@index([tutorId, startAt, endAt])
+  @@index([status])
+  @@map("bookings")
+}
+
+// ==========================================
+// REVIEW
+// ==========================================
+
+model Review {
+  id        Int    @id @default(autoincrement())
+  bookingId Int    @unique
+  tutorId   Int
+  studentId Int
+  rating    Int
+  comment   String?
+
+  booking Booking       @relation(fields: [bookingId], references: [id])
+  tutor   TutorProfile  @relation(fields: [tutorId], references: [id])
+  student StudentProfile @relation(fields: [studentId], references: [id])
+  
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([tutorId])
+  @@map("reviews")
+}
+
+
+model VerificationRequest {
+  id           Int                @id @default(autoincrement())
+  userId       Int
+  documentType String
+  fileObjectKey String
+  status       VerificationStatus @default(PENDING)
+
+  adminNote    String?
+  reviewedAt   DateTime?
+  reviewedById Int?
+
+  user User @relation(
+    "VerificationOwner",
+    fields: [userId],
+    references: [id]
+  )
+
+  reviewedBy User? @relation(
+    "VerificationReviewer",
+    fields: [reviewedById],
+    references: [id]
+  )
+
+  result VerificationResult?
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("verification_requests")
+}
+
+model VerificationResult {
+  id                   Int                    @id @default(autoincrement())
+  verificationRequestId Int                   @unique
+  assessment           VerificationAssessment
+  confidence           Float?
+  explanation          String?
+  modelVersion         String?
+
+  request VerificationRequest @relation(
+    fields: [verificationRequestId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now()) @onCreate(now())
+
+  @@map("verification_results")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now()) @onCreate(now())
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Payment {
+  id                Int           @id @default(autoincrement())
+  bookingId         Int
+  payerId           Int
+
+  amount            Decimal
+  currency          String        @default("BDT")
+  paymentMethod     String?
+  paymentProvider   String?
+  transactionId     String?       @unique
+
+  status            PaymentStatus @default(PENDING)
+
+  paidAt            DateTime?
+  failureReason     String?
+
+  booking Booking @relation(
+    fields: [bookingId],
+    references: [id]
+  )
+
+  payer User @relation(
+    fields: [payerId],
+    references: [id]
+  )
+
+  refunds Refund[]
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([bookingId])
+  @@index([payerId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Refund {
+  id               Int          @id @default(autoincrement())
+  paymentId        Int
+  amount           Decimal
+  reason           String?
+  status           RefundStatus  @default(PENDING)
+  providerRefundId String?       @unique
+  processedAt      DateTime?
+
+  payment Payment @relation(
+    fields: [paymentId],
+    references: [id]
+  )
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([paymentId])
+  @@index([status])
+  @@map("refunds")
+}
