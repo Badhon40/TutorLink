@@ -66,9 +66,28 @@ enum NotificationType {
   SYSTEM = "SYSTEM"
 }
 
-// ==========================================
-// USER
-// ==========================================
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique
+  familyId  String
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now()) @onCreate(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
 
 model User {
   id           Int      @id @default(autoincrement())
@@ -86,6 +105,8 @@ model User {
 reviewedVerificationRequests VerificationRequest[] @relation("VerificationReviewer")
 notifications                Notification[]
 payments                     Payment[]
+
+refreshTokens RefreshToken[]
 
   createdAt DateTime @default(now()) @onCreate(now())
   updatedAt temporal.UpdatedAt
