@@ -7,6 +7,7 @@ import { ApiError } from "./utils/ApiError";
 import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes";
 import studentRoutes from "./modules/students/student.routes";
+import tutorRoutes from "./modules/tutors/tutor.routes";
 
 const app = express();
 
@@ -57,6 +58,9 @@ app.use("/api/auth", authRoutes);
 
 // Student routes
 app.use("/api/students", studentRoutes);
+
+// Tutor routes
+app.use("/api/tutors", tutorRoutes);
 
 // Global error handler
 
