@@ -6,6 +6,7 @@ import { globalErrorHandler } from "./middlewares/error.middleware";
 import { ApiError } from "./utils/ApiError";
 import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes";
+import studentRoutes from "./modules/students/student.routes";
 
 const app = express();
 
@@ -53,6 +54,9 @@ app.get("/api/health/db", async (_req, res) => {
 
 // Auth routes
 app.use("/api/auth", authRoutes);
+
+// Student routes
+app.use("/api/students", studentRoutes);
 
 // Global error handler
 
