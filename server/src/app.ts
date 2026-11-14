@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes";
 import studentRoutes from "./modules/students/student.routes";
 import tutorRoutes from "./modules/tutors/tutor.routes";
+import bookingRoutes from "./modules/bookings/booking.routes";
 
 const app = express();
 
@@ -61,6 +62,9 @@ app.use("/api/students", studentRoutes);
 
 // Tutor routes
 app.use("/api/tutors", tutorRoutes);
+
+// Booking routes
+app.use("/api/bookings", bookingRoutes);
 
 // Global error handler
 
