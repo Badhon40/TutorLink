@@ -43,9 +43,31 @@ enum VerificationAssessment {
 enum PaymentStatus {
   @@type("pg/text@1")
 
+  PENDING            = "PENDING"
+  SUCCEEDED          = "SUCCEEDED"
+  FAILED             = "FAILED"
+  CANCELLED          = "CANCELLED"
+  PARTIALLY_REFUNDED = "PARTIALLY_REFUNDED"
+  REFUNDED           = "REFUNDED"
+}
+
+enum PayoutMethod {
+  @@type("pg/text@1")
+
+  BKASH  = "BKASH"
+  NAGAD  = "NAGAD"
+  ROCKET = "ROCKET"
+}
+
+enum PayoutStatus {
+  @@type("pg/text@1")
+
   PENDING = "PENDING"
-  SUCCEEDED = "SUCCEEDED"
+  APPROVED = "APPROVED"
+  PROCESSING = "PROCESSING"
+  PAID = "PAID"
   FAILED = "FAILED"
+  REJECTED = "REJECTED"
   CANCELLED = "CANCELLED"
 }
 
@@ -56,6 +78,7 @@ enum RefundStatus {
   SUCCEEDED = "SUCCEEDED"
   FAILED = "FAILED"
 }
+
 
 enum NotificationType {
   @@type("pg/text@1")
@@ -98,6 +121,8 @@ model User {
   phone        String?
   role         Role     @default(STUDENT)
   isActive     Boolean  @default(true)
+  approvedPayouts  TutorPayout[] @relation("PayoutApprover")
+processedPayouts TutorPayout[] @relation("PayoutProcessor")
 
   studentProfile StudentProfile?
   tutorProfile   TutorProfile?
@@ -153,7 +178,9 @@ model TutorProfile {
   hourlyRate      Decimal
   location        String?
   profileImage    String?
-  accountNumber   String?
+   payouts TutorPayout[]
+  accountNumber String?
+  payoutMethod PayoutMethod?
   isVerified      Boolean  @default(false)
   averageRating   Float    @default(0)
   totalReviews    Int      @default(0)
@@ -215,6 +242,7 @@ model Booking {
   tutor   TutorProfile   @relation(fields: [tutorId], references: [id])
 
   review Review?
+  payout TutorPayout?
 
   createdAt DateTime @default(now()) @onCreate(now())
   updatedAt temporal.UpdatedAt
@@ -324,20 +352,24 @@ model Notification {
 }
 
 model Payment {
-  id                Int           @id @default(autoincrement())
-  bookingId         Int
-  payerId           Int
+  id              Int           @id @default(autoincrement())
+  bookingId       Int
+  payerId         Int
 
-  amount            Decimal
-  currency          String        @default("BDT")
-  paymentMethod     String?
-  paymentProvider   String?
-  transactionId     String?       @unique
+  amount          Decimal
+  currency        String        @default("BDT")
+  paymentMethod   String?
+  paymentProvider String?
+  transactionId   String?       @unique
 
-  status            PaymentStatus @default(PENDING)
+  providerSessionId String? @unique
+  idempotencyKey    String? @unique
+  checkoutUrl       String?
 
-  paidAt            DateTime?
-  failureReason     String?
+  status          PaymentStatus @default(PENDING)
+
+  paidAt          DateTime?
+  failureReason   String?
 
   booking Booking @relation(
     fields: [bookingId],
@@ -359,6 +391,68 @@ model Payment {
   @@index([status])
   @@map("payments")
 }
+
+model TutorPayout {
+  id             Int @id @default(autoincrement())
+  bookingId      Int @unique
+  tutorProfileId Int
+
+  // Financial calculation
+  grossAmount      Decimal
+  commissionRate   Decimal
+  commissionAmount Decimal
+  netAmount        Decimal
+  currency         String @default("BDT")
+
+  // Snapshot of tutor payout details
+  payoutMethod        PayoutMethod
+  payoutAccountNumber String
+
+  // Payout status
+  status PayoutStatus @default(PENDING)
+
+  // Admin information
+  approvedById Int?
+  paidById     Int?
+
+  transferReference String? @unique
+  adminNote         String?
+
+  approvedAt DateTime?
+  paidAt     DateTime?
+
+  // Relations
+  booking Booking @relation(
+    fields: [bookingId],
+    references: [id]
+  )
+
+  tutor TutorProfile @relation(
+    fields: [tutorProfileId],
+    references: [id]
+  )
+
+  approvedBy User? @relation(
+    "PayoutApprover",
+    fields: [approvedById],
+    references: [id]
+  )
+
+  paidBy User? @relation(
+    "PayoutProcessor",
+    fields: [paidById],
+    references: [id]
+  )
+
+  createdAt DateTime @default(now()) @onCreate(now())
+  updatedAt temporal.UpdatedAt
+
+  @@index([tutorProfileId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("tutor_payouts")
+}
+ 
 
 model Refund {
   id               Int          @id @default(autoincrement())

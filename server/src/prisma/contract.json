@@ -36,6 +36,10 @@
       "model": "TutorAvailability",
       "namespace": "public"
     },
+    "tutor_payouts": {
+      "model": "TutorPayout",
+      "namespace": "public"
+    },
     "tutor_profiles": {
       "model": "TutorProfile",
       "namespace": "public"
@@ -117,6 +121,64 @@
               {
                 "name": "FAILED",
                 "value": "FAILED"
+              },
+              {
+                "name": "CANCELLED",
+                "value": "CANCELLED"
+              },
+              {
+                "name": "PARTIALLY_REFUNDED",
+                "value": "PARTIALLY_REFUNDED"
+              },
+              {
+                "name": "REFUNDED",
+                "value": "REFUNDED"
+              }
+            ]
+          },
+          "PayoutMethod": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "BKASH",
+                "value": "BKASH"
+              },
+              {
+                "name": "NAGAD",
+                "value": "NAGAD"
+              },
+              {
+                "name": "ROCKET",
+                "value": "ROCKET"
+              }
+            ]
+          },
+          "PayoutStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "PENDING",
+                "value": "PENDING"
+              },
+              {
+                "name": "APPROVED",
+                "value": "APPROVED"
+              },
+              {
+                "name": "PROCESSING",
+                "value": "PROCESSING"
+              },
+              {
+                "name": "PAID",
+                "value": "PAID"
+              },
+              {
+                "name": "FAILED",
+                "value": "FAILED"
+              },
+              {
+                "name": "REJECTED",
+                "value": "REJECTED"
               },
               {
                 "name": "CANCELLED",
@@ -330,6 +392,22 @@
                 },
                 "to": {
                   "model": "Payment",
+                  "namespace": "public"
+                }
+              },
+              "payout": {
+                "cardinality": "1:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "bookingId"
+                  ]
+                },
+                "to": {
+                  "model": "TutorPayout",
                   "namespace": "public"
                 }
               },
@@ -567,6 +645,13 @@
                   "kind": "scalar"
                 }
               },
+              "checkoutUrl": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -598,6 +683,13 @@
                   "kind": "scalar"
                 }
               },
+              "idempotencyKey": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "paidAt": {
                 "nullable": true,
                 "type": {
@@ -623,6 +715,13 @@
                 }
               },
               "paymentProvider": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "providerSessionId": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
@@ -717,6 +816,9 @@
                 "bookingId": {
                   "column": "bookingId"
                 },
+                "checkoutUrl": {
+                  "column": "checkoutUrl"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -729,6 +831,9 @@
                 "id": {
                   "column": "id"
                 },
+                "idempotencyKey": {
+                  "column": "idempotencyKey"
+                },
                 "paidAt": {
                   "column": "paidAt"
                 },
@@ -740,6 +845,9 @@
                 },
                 "paymentProvider": {
                   "column": "paymentProvider"
+                },
+                "providerSessionId": {
+                  "column": "providerSessionId"
                 },
                 "status": {
                   "column": "status"
@@ -1409,6 +1517,296 @@
               "table": "tutor_availability"
             }
           },
+          "TutorPayout": {
+            "fields": {
+              "adminNote": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "approvedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "approvedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "bookingId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "commissionAmount": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "commissionRate": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "currency": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "grossAmount": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "netAmount": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "paidAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "paidById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "payoutAccountNumber": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "payoutMethod": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "PayoutMethod",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "PayoutStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "transferReference": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "tutorProfileId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "approvedBy": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "approvedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "booking": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "bookingId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Booking",
+                  "namespace": "public"
+                }
+              },
+              "paidBy": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "paidById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "tutor": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "tutorProfileId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "TutorProfile",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "adminNote": {
+                  "column": "adminNote"
+                },
+                "approvedAt": {
+                  "column": "approvedAt"
+                },
+                "approvedById": {
+                  "column": "approvedById"
+                },
+                "bookingId": {
+                  "column": "bookingId"
+                },
+                "commissionAmount": {
+                  "column": "commissionAmount"
+                },
+                "commissionRate": {
+                  "column": "commissionRate"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "currency": {
+                  "column": "currency"
+                },
+                "grossAmount": {
+                  "column": "grossAmount"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "netAmount": {
+                  "column": "netAmount"
+                },
+                "paidAt": {
+                  "column": "paidAt"
+                },
+                "paidById": {
+                  "column": "paidById"
+                },
+                "payoutAccountNumber": {
+                  "column": "payoutAccountNumber"
+                },
+                "payoutMethod": {
+                  "column": "payoutMethod"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "transferReference": {
+                  "column": "transferReference"
+                },
+                "tutorProfileId": {
+                  "column": "tutorProfileId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "tutor_payouts"
+            }
+          },
           "TutorProfile": {
             "fields": {
               "accountNumber": {
@@ -1491,6 +1889,19 @@
                   "kind": "scalar"
                 }
               },
+              "payoutMethod": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "PayoutMethod",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
               "profileImage": {
                 "nullable": true,
                 "type": {
@@ -1571,6 +1982,21 @@
                   "namespace": "public"
                 }
               },
+              "payouts": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "tutorProfileId"
+                  ]
+                },
+                "to": {
+                  "model": "TutorPayout",
+                  "namespace": "public"
+                }
+              },
               "reviews": {
                 "cardinality": "1:N",
                 "on": {
@@ -1637,6 +2063,9 @@
                 },
                 "location": {
                   "column": "location"
+                },
+                "payoutMethod": {
+                  "column": "payoutMethod"
                 },
                 "profileImage": {
                   "column": "profileImage"
@@ -1747,6 +2176,21 @@
               }
             },
             "relations": {
+              "approvedPayouts": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "approvedById"
+                  ]
+                },
+                "to": {
+                  "model": "TutorPayout",
+                  "namespace": "public"
+                }
+              },
               "notifications": {
                 "cardinality": "1:N",
                 "on": {
@@ -1774,6 +2218,21 @@
                 },
                 "to": {
                   "model": "Payment",
+                  "namespace": "public"
+                }
+              },
+              "processedPayouts": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "paidById"
+                  ]
+                },
+                "to": {
+                  "model": "TutorPayout",
                   "namespace": "public"
                 }
               },
@@ -2509,8 +2968,8 @@
             "payments": {
               "checks": [
                 {
-                  "expression": "\"status\" IN ('PENDING', 'SUCCEEDED', 'FAILED', 'CANCELLED')",
-                  "name": "payments_status_check_70878036",
+                  "expression": "\"status\" IN ('PENDING', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_REFUNDED', 'REFUNDED')",
+                  "name": "payments_status_check_8b1e8c18",
                   "prefix": "payments_status_check"
                 }
               ],
@@ -2524,6 +2983,11 @@
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
                   "nullable": false
+                },
+                "checkoutUrl": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
                 },
                 "createdAt": {
                   "codecId": "pg/timestamptz-date@1",
@@ -2560,6 +3024,11 @@
                   },
                   "nullable": false
                 },
+                "idempotencyKey": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "paidAt": {
                   "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
@@ -2579,6 +3048,11 @@
                   "nullable": true
                 },
                 "paymentProvider": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "providerSessionId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": true
@@ -2687,6 +3161,16 @@
                 {
                   "columns": [
                     "transactionId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "providerSessionId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "idempotencyKey"
                   ]
                 }
               ]
@@ -3299,8 +3783,303 @@
               },
               "uniques": []
             },
+            "tutor_payouts": {
+              "checks": [
+                {
+                  "expression": "\"payoutMethod\" IN ('BKASH', 'NAGAD', 'ROCKET')",
+                  "name": "tutor_payouts_payoutMethod_check_d9dc71d8",
+                  "prefix": "tutor_payouts_payoutMethod_check"
+                },
+                {
+                  "expression": "\"status\" IN ('PENDING', 'APPROVED', 'PROCESSING', 'PAID', 'FAILED', 'REJECTED', 'CANCELLED')",
+                  "name": "tutor_payouts_status_check_371b29a4",
+                  "prefix": "tutor_payouts_status_check"
+                }
+              ],
+              "columns": {
+                "adminNote": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "approvedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "approvedById": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                },
+                "bookingId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "commissionAmount": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "commissionRate": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "currency": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "BDT"
+                  },
+                  "nullable": false
+                },
+                "grossAmount": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "netAmount": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "paidAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "paidById": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                },
+                "payoutAccountNumber": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "payoutMethod": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "PayoutMethod",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PENDING"
+                  },
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "PayoutStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "transferReference": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "tutorProfileId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "unique": [
+                      "bookingId"
+                    ]
+                  },
+                  "source": {
+                    "columns": [
+                      "bookingId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "tutor_payouts"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "bookings"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "tutor_payouts_tutorProfileId_idx_c9a9af10"
+                  },
+                  "source": {
+                    "columns": [
+                      "tutorProfileId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "tutor_payouts"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "tutor_profiles"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "tutor_payouts_approvedById_idx_01ef8410"
+                  },
+                  "source": {
+                    "columns": [
+                      "approvedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "tutor_payouts"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "tutor_payouts_paidById_idx_406e50ef"
+                  },
+                  "source": {
+                    "columns": [
+                      "paidById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "tutor_payouts"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "approvedById"
+                  ],
+                  "name": "tutor_payouts_approvedById_idx_01ef8410",
+                  "prefix": "tutor_payouts_approvedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "createdAt"
+                  ],
+                  "name": "tutor_payouts_createdAt_idx_9575dbd7",
+                  "prefix": "tutor_payouts_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "paidById"
+                  ],
+                  "name": "tutor_payouts_paidById_idx_406e50ef",
+                  "prefix": "tutor_payouts_paidById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "status"
+                  ],
+                  "name": "tutor_payouts_status_idx_e98638ab",
+                  "prefix": "tutor_payouts_status_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "tutorProfileId"
+                  ],
+                  "name": "tutor_payouts_tutorProfileId_idx_c9a9af10",
+                  "prefix": "tutor_payouts_tutorProfileId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "bookingId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "transferReference"
+                  ]
+                }
+              ]
+            },
             "tutor_profiles": {
               "checks": [
+                {
+                  "expression": "\"payoutMethod\" IN ('BKASH', 'NAGAD', 'ROCKET')",
+                  "name": "tutor_profiles_payoutMethod_check_d9dc71d8",
+                  "prefix": "tutor_profiles_payoutMethod_check"
+                },
                 {
                   "expression": "array_position(\"subjects\", NULL) IS NULL",
                   "name": "tutor_profiles_subjects_elem_not_null_ce05f898",
@@ -3385,6 +4164,17 @@
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": true
+                },
+                "payoutMethod": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "PayoutMethod",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "profileImage": {
                   "codecId": "pg/text@1",
@@ -3877,6 +4667,28 @@
                 "PENDING",
                 "SUCCEEDED",
                 "FAILED",
+                "CANCELLED",
+                "PARTIALLY_REFUNDED",
+                "REFUNDED"
+              ]
+            },
+            "PayoutMethod": {
+              "kind": "valueSet",
+              "values": [
+                "BKASH",
+                "NAGAD",
+                "ROCKET"
+              ]
+            },
+            "PayoutStatus": {
+              "kind": "valueSet",
+              "values": [
+                "PENDING",
+                "APPROVED",
+                "PROCESSING",
+                "PAID",
+                "FAILED",
+                "REJECTED",
                 "CANCELLED"
               ]
             },
@@ -3919,10 +4731,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "76558b6965828f3e147ec32e74e003c025d6b86224bbabba335222ef260061f7"
+    "storageHash": "689d54819bec67d7082e33c0eb89a4d3c4183b1743a61e6a86fdb95152e451d1"
   },
   "execution": {
-    "executionHash": "49fcc0bfd123aeea03c3734debb5359519da0ad2adeab64eac98fab1eea1872a",
+    "executionHash": "b2ca4aaf95337b227d64e904b80ecc0431464712090a301191b95fcce4da0987",
     "mutations": {
       "defaults": [
         {
@@ -4159,6 +4971,41 @@
           },
           "ref": {
             "entry": "tutor_availability",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "tutor_payouts",
+            "field": "createdAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "tutor_payouts",
             "field": "updatedAt",
             "namespace": "public"
           }

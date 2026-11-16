@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'76558b6965828f3e147ec32e74e003c025d6b86224bbabba335222ef260061f7'>;
+  StorageHashBase<'689d54819bec67d7082e33c0eb89a4d3c4183b1743a61e6a86fdb95152e451d1'>;
 export type ExecutionHash =
-  ExecutionHashBase<'49fcc0bfd123aeea03c3734debb5359519da0ad2adeab64eac98fab1eea1872a'>;
+  ExecutionHashBase<'b2ca4aaf95337b227d64e904b80ecc0431464712090a301191b95fcce4da0987'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -292,14 +292,34 @@ type FieldTypeOverrides = {
       };
       readonly Payment: {
         readonly status: {
-          readonly output: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
-          readonly input: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+          readonly output:
+            'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED';
+          readonly input:
+            'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED';
         };
       };
       readonly Refund: {
         readonly status: {
           readonly output: 'PENDING' | 'SUCCEEDED' | 'FAILED';
           readonly input: 'PENDING' | 'SUCCEEDED' | 'FAILED';
+        };
+      };
+      readonly TutorPayout: {
+        readonly payoutMethod: {
+          readonly output: 'BKASH' | 'NAGAD' | 'ROCKET';
+          readonly input: 'BKASH' | 'NAGAD' | 'ROCKET';
+        };
+        readonly status: {
+          readonly output:
+            'PENDING' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'FAILED' | 'REJECTED' | 'CANCELLED';
+          readonly input:
+            'PENDING' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'FAILED' | 'REJECTED' | 'CANCELLED';
+        };
+      };
+      readonly TutorProfile: {
+        readonly payoutMethod: {
+          readonly output: 'BKASH' | 'NAGAD' | 'ROCKET';
+          readonly input: 'BKASH' | 'NAGAD' | 'ROCKET';
         };
       };
       readonly User: {
@@ -355,14 +375,34 @@ type ColumnTypeOverrides = {
     };
     readonly payments: {
       readonly status: {
-        readonly output: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
-        readonly input: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+        readonly output:
+          'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED';
+        readonly input:
+          'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED';
       };
     };
     readonly refunds: {
       readonly status: {
         readonly output: 'PENDING' | 'SUCCEEDED' | 'FAILED';
         readonly input: 'PENDING' | 'SUCCEEDED' | 'FAILED';
+      };
+    };
+    readonly tutor_payouts: {
+      readonly payoutMethod: {
+        readonly output: 'BKASH' | 'NAGAD' | 'ROCKET';
+        readonly input: 'BKASH' | 'NAGAD' | 'ROCKET';
+      };
+      readonly status: {
+        readonly output:
+          'PENDING' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'FAILED' | 'REJECTED' | 'CANCELLED';
+        readonly input:
+          'PENDING' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'FAILED' | 'REJECTED' | 'CANCELLED';
+      };
+    };
+    readonly tutor_profiles: {
+      readonly payoutMethod: {
+        readonly output: 'BKASH' | 'NAGAD' | 'ROCKET';
+        readonly input: 'BKASH' | 'NAGAD' | 'ROCKET';
       };
     };
     readonly users: {
@@ -417,10 +457,11 @@ export namespace Models {
     tutorMessage: FieldOutputTypes['public']['Booking']['tutorMessage'];
     updatedAt: FieldOutputTypes['public']['Booking']['updatedAt'];
     payments: public_Payment[];
+    payout: public_TutorPayout | null;
     review: public_Review | null;
     student: public_StudentProfile;
     tutor: public_TutorProfile;
-    readonly [RelationKeys]?: 'payments' | 'review' | 'student' | 'tutor';
+    readonly [RelationKeys]?: 'payments' | 'payout' | 'review' | 'student' | 'tutor';
   };
   export type public_Notification = {
     createdAt: FieldOutputTypes['public']['Notification']['createdAt'];
@@ -437,14 +478,17 @@ export namespace Models {
   export type public_Payment = {
     amount: FieldOutputTypes['public']['Payment']['amount'];
     bookingId: FieldOutputTypes['public']['Payment']['bookingId'];
+    checkoutUrl: FieldOutputTypes['public']['Payment']['checkoutUrl'];
     createdAt: FieldOutputTypes['public']['Payment']['createdAt'];
     currency: FieldOutputTypes['public']['Payment']['currency'];
     failureReason: FieldOutputTypes['public']['Payment']['failureReason'];
     id: FieldOutputTypes['public']['Payment']['id'];
+    idempotencyKey: FieldOutputTypes['public']['Payment']['idempotencyKey'];
     paidAt: FieldOutputTypes['public']['Payment']['paidAt'];
     payerId: FieldOutputTypes['public']['Payment']['payerId'];
     paymentMethod: FieldOutputTypes['public']['Payment']['paymentMethod'];
     paymentProvider: FieldOutputTypes['public']['Payment']['paymentProvider'];
+    providerSessionId: FieldOutputTypes['public']['Payment']['providerSessionId'];
     status: FieldOutputTypes['public']['Payment']['status'];
     transactionId: FieldOutputTypes['public']['Payment']['transactionId'];
     updatedAt: FieldOutputTypes['public']['Payment']['updatedAt'];
@@ -518,6 +562,32 @@ export namespace Models {
     tutor: public_TutorProfile;
     readonly [RelationKeys]?: 'tutor';
   };
+  export type public_TutorPayout = {
+    adminNote: FieldOutputTypes['public']['TutorPayout']['adminNote'];
+    approvedAt: FieldOutputTypes['public']['TutorPayout']['approvedAt'];
+    approvedById: FieldOutputTypes['public']['TutorPayout']['approvedById'];
+    bookingId: FieldOutputTypes['public']['TutorPayout']['bookingId'];
+    commissionAmount: FieldOutputTypes['public']['TutorPayout']['commissionAmount'];
+    commissionRate: FieldOutputTypes['public']['TutorPayout']['commissionRate'];
+    createdAt: FieldOutputTypes['public']['TutorPayout']['createdAt'];
+    currency: FieldOutputTypes['public']['TutorPayout']['currency'];
+    grossAmount: FieldOutputTypes['public']['TutorPayout']['grossAmount'];
+    id: FieldOutputTypes['public']['TutorPayout']['id'];
+    netAmount: FieldOutputTypes['public']['TutorPayout']['netAmount'];
+    paidAt: FieldOutputTypes['public']['TutorPayout']['paidAt'];
+    paidById: FieldOutputTypes['public']['TutorPayout']['paidById'];
+    payoutAccountNumber: FieldOutputTypes['public']['TutorPayout']['payoutAccountNumber'];
+    payoutMethod: FieldOutputTypes['public']['TutorPayout']['payoutMethod'];
+    status: FieldOutputTypes['public']['TutorPayout']['status'];
+    transferReference: FieldOutputTypes['public']['TutorPayout']['transferReference'];
+    tutorProfileId: FieldOutputTypes['public']['TutorPayout']['tutorProfileId'];
+    updatedAt: FieldOutputTypes['public']['TutorPayout']['updatedAt'];
+    approvedBy: public_User | null;
+    booking: public_Booking;
+    paidBy: public_User | null;
+    tutor: public_TutorProfile;
+    readonly [RelationKeys]?: 'approvedBy' | 'booking' | 'paidBy' | 'tutor';
+  };
   export type public_TutorProfile = {
     accountNumber: FieldOutputTypes['public']['TutorProfile']['accountNumber'];
     averageRating: FieldOutputTypes['public']['TutorProfile']['averageRating'];
@@ -530,6 +600,7 @@ export namespace Models {
     institution: FieldOutputTypes['public']['TutorProfile']['institution'];
     isVerified: FieldOutputTypes['public']['TutorProfile']['isVerified'];
     location: FieldOutputTypes['public']['TutorProfile']['location'];
+    payoutMethod: FieldOutputTypes['public']['TutorProfile']['payoutMethod'];
     profileImage: FieldOutputTypes['public']['TutorProfile']['profileImage'];
     qualification: FieldOutputTypes['public']['TutorProfile']['qualification'];
     subjects: FieldOutputTypes['public']['TutorProfile']['subjects'];
@@ -538,9 +609,10 @@ export namespace Models {
     userId: FieldOutputTypes['public']['TutorProfile']['userId'];
     availability: public_TutorAvailability[];
     bookings: public_Booking[];
+    payouts: public_TutorPayout[];
     reviews: public_Review[];
     user: public_User;
-    readonly [RelationKeys]?: 'availability' | 'bookings' | 'reviews' | 'user';
+    readonly [RelationKeys]?: 'availability' | 'bookings' | 'payouts' | 'reviews' | 'user';
   };
   export type public_User = {
     createdAt: FieldOutputTypes['public']['User']['createdAt'];
@@ -553,16 +625,20 @@ export namespace Models {
     role: FieldOutputTypes['public']['User']['role'];
     updatedAt: FieldOutputTypes['public']['User']['updatedAt'];
     username: FieldOutputTypes['public']['User']['username'];
+    approvedPayouts: public_TutorPayout[];
     notifications: public_Notification[];
     payments: public_Payment[];
+    processedPayouts: public_TutorPayout[];
     refreshTokens: public_RefreshToken[];
     reviewedVerificationRequests: public_VerificationRequest[];
     studentProfile: public_StudentProfile | null;
     tutorProfile: public_TutorProfile | null;
     verificationRequests: public_VerificationRequest[];
     readonly [RelationKeys]?:
+      | 'approvedPayouts'
       | 'notifications'
       | 'payments'
+      | 'processedPayouts'
       | 'refreshTokens'
       | 'reviewedVerificationRequests'
       | 'studentProfile'
@@ -608,6 +684,7 @@ export declare const models: {
     Review: Models.public_Review;
     StudentProfile: Models.public_StudentProfile;
     TutorAvailability: Models.public_TutorAvailability;
+    TutorPayout: Models.public_TutorPayout;
     TutorProfile: Models.public_TutorProfile;
     User: Models.public_User;
     VerificationRequest: Models.public_VerificationRequest;
@@ -901,6 +978,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly checkoutUrl: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly createdAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -935,6 +1018,12 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly idempotencyKey: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly paidAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -955,6 +1044,12 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly paymentProvider: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly providerSessionId: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
@@ -985,7 +1080,11 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['transactionId'] }];
+              uniques: readonly [
+                { readonly columns: readonly ['transactionId'] },
+                { readonly columns: readonly ['providerSessionId'] },
+                { readonly columns: readonly ['idempotencyKey'] },
+              ];
               indexes: readonly [
                 {
                   readonly name: 'payments_bookingId_idx_17848f4a';
@@ -1511,6 +1610,228 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly tutor_payouts: {
+              columns: {
+                readonly adminNote: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly approvedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: true;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly approvedById: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly bookingId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly commissionAmount: {
+                  readonly dataType: 'pg/numeric';
+                  readonly codecId: 'pg/numeric@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly commissionRate: {
+                  readonly dataType: 'pg/numeric';
+                  readonly codecId: 'pg/numeric@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly currency: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'BDT'>;
+                  };
+                  readonly many: false;
+                };
+                readonly grossAmount: {
+                  readonly dataType: 'pg/numeric';
+                  readonly codecId: 'pg/numeric@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly netAmount: {
+                  readonly dataType: 'pg/numeric';
+                  readonly codecId: 'pg/numeric@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly paidAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: true;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly paidById: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly payoutAccountNumber: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly payoutMethod: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly status: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'PENDING'>;
+                  };
+                  readonly many: false;
+                };
+                readonly transferReference: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly tutorProfileId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [
+                { readonly columns: readonly ['bookingId'] },
+                { readonly columns: readonly ['transferReference'] },
+              ];
+              indexes: readonly [
+                {
+                  readonly name: 'tutor_payouts_approvedById_idx_01ef8410';
+                  readonly prefix: 'tutor_payouts_approvedById_idx';
+                  readonly columns: readonly ['approvedById'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'tutor_payouts_createdAt_idx_9575dbd7';
+                  readonly prefix: 'tutor_payouts_createdAt_idx';
+                  readonly columns: readonly ['createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'tutor_payouts_paidById_idx_406e50ef';
+                  readonly prefix: 'tutor_payouts_paidById_idx';
+                  readonly columns: readonly ['paidById'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'tutor_payouts_status_idx_e98638ab';
+                  readonly prefix: 'tutor_payouts_status_idx';
+                  readonly columns: readonly ['status'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'tutor_payouts_tutorProfileId_idx_c9a9af10';
+                  readonly prefix: 'tutor_payouts_tutorProfileId_idx';
+                  readonly columns: readonly ['tutorProfileId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'tutor_payouts';
+                    readonly columns: readonly ['bookingId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'bookings';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'tutor_payouts';
+                    readonly columns: readonly ['tutorProfileId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'tutor_profiles';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'tutor_payouts';
+                    readonly columns: readonly ['approvedById'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'users';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'tutor_payouts';
+                    readonly columns: readonly ['paidById'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'users';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly tutor_profiles: {
               columns: {
                 readonly accountNumber: {
@@ -1592,6 +1913,12 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly location: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly payoutMethod: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
@@ -1972,7 +2299,30 @@ type ContractBase = Omit<
             };
             readonly PaymentStatus: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELLED'];
+              readonly values: readonly [
+                'PENDING',
+                'SUCCEEDED',
+                'FAILED',
+                'CANCELLED',
+                'PARTIALLY_REFUNDED',
+                'REFUNDED',
+              ];
+            };
+            readonly PayoutMethod: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['BKASH', 'NAGAD', 'ROCKET'];
+            };
+            readonly PayoutStatus: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'PENDING',
+                'APPROVED',
+                'PROCESSING',
+                'PAID',
+                'FAILED',
+                'REJECTED',
+                'CANCELLED',
+              ];
             };
             readonly RefundStatus: {
               readonly kind: 'valueSet';
@@ -2025,6 +2375,10 @@ type ContractBase = Omit<
     readonly tutor_availability: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'TutorAvailability';
+    };
+    readonly tutor_payouts: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'TutorPayout';
     };
     readonly tutor_profiles: {
       readonly namespace: 'public' & NamespaceId;
@@ -2126,6 +2480,18 @@ type ContractBase = Omit<
                   readonly model: 'Payment';
                 };
                 readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['bookingId'];
+                };
+              };
+              readonly payout: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TutorPayout';
+                };
+                readonly cardinality: '1:1';
+                readonly nullable: true;
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['bookingId'];
@@ -2268,6 +2634,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly checkoutUrl: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -2288,6 +2658,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly idempotencyKey: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly paidAt: {
                 readonly nullable: true;
                 readonly type: {
@@ -2305,6 +2679,10 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly paymentProvider: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly providerSessionId: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
@@ -2365,14 +2743,17 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly amount: { readonly column: 'amount' };
                 readonly bookingId: { readonly column: 'bookingId' };
+                readonly checkoutUrl: { readonly column: 'checkoutUrl' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly currency: { readonly column: 'currency' };
                 readonly failureReason: { readonly column: 'failureReason' };
                 readonly id: { readonly column: 'id' };
+                readonly idempotencyKey: { readonly column: 'idempotencyKey' };
                 readonly paidAt: { readonly column: 'paidAt' };
                 readonly payerId: { readonly column: 'payerId' };
                 readonly paymentMethod: { readonly column: 'paymentMethod' };
                 readonly paymentProvider: { readonly column: 'paymentProvider' };
+                readonly providerSessionId: { readonly column: 'providerSessionId' };
                 readonly status: { readonly column: 'status' };
                 readonly transactionId: { readonly column: 'transactionId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
@@ -2792,6 +3173,171 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly TutorPayout: {
+            readonly fields: {
+              readonly adminNote: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly approvedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly approvedById: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly bookingId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly commissionAmount: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/numeric@1' };
+              };
+              readonly commissionRate: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/numeric@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly currency: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly grossAmount: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/numeric@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly netAmount: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/numeric@1' };
+              };
+              readonly paidAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly paidById: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly payoutAccountNumber: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly payoutMethod: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly transferReference: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly tutorProfileId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+            };
+            readonly relations: {
+              readonly approvedBy: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['approvedById'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly booking: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Booking';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['bookingId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly paidBy: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['paidById'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly tutor: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TutorProfile';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['tutorProfileId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'tutor_payouts';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly adminNote: { readonly column: 'adminNote' };
+                readonly approvedAt: { readonly column: 'approvedAt' };
+                readonly approvedById: { readonly column: 'approvedById' };
+                readonly bookingId: { readonly column: 'bookingId' };
+                readonly commissionAmount: { readonly column: 'commissionAmount' };
+                readonly commissionRate: { readonly column: 'commissionRate' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly currency: { readonly column: 'currency' };
+                readonly grossAmount: { readonly column: 'grossAmount' };
+                readonly id: { readonly column: 'id' };
+                readonly netAmount: { readonly column: 'netAmount' };
+                readonly paidAt: { readonly column: 'paidAt' };
+                readonly paidById: { readonly column: 'paidById' };
+                readonly payoutAccountNumber: { readonly column: 'payoutAccountNumber' };
+                readonly payoutMethod: { readonly column: 'payoutMethod' };
+                readonly status: { readonly column: 'status' };
+                readonly transferReference: { readonly column: 'transferReference' };
+                readonly tutorProfileId: { readonly column: 'tutorProfileId' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
           readonly TutorProfile: {
             readonly fields: {
               readonly accountNumber: {
@@ -2839,6 +3385,10 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
               readonly location: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly payoutMethod: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
@@ -2895,6 +3445,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['tutorId'];
                 };
               };
+              readonly payouts: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TutorPayout';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['tutorProfileId'];
+                };
+              };
               readonly reviews: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -2931,6 +3492,7 @@ type ContractBase = Omit<
                 readonly institution: { readonly column: 'institution' };
                 readonly isVerified: { readonly column: 'isVerified' };
                 readonly location: { readonly column: 'location' };
+                readonly payoutMethod: { readonly column: 'payoutMethod' };
                 readonly profileImage: { readonly column: 'profileImage' };
                 readonly qualification: { readonly column: 'qualification' };
                 readonly subjects: { readonly column: 'subjects' };
@@ -2992,6 +3554,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly approvedPayouts: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TutorPayout';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['approvedById'];
+                };
+              };
               readonly notifications: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -3012,6 +3585,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['payerId'];
+                };
+              };
+              readonly processedPayouts: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TutorPayout';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['paidById'];
                 };
               };
               readonly refreshTokens: {
@@ -3284,6 +3868,28 @@ type ContractBase = Omit<
               { readonly name: 'SUCCEEDED'; readonly value: 'SUCCEEDED' },
               { readonly name: 'FAILED'; readonly value: 'FAILED' },
               { readonly name: 'CANCELLED'; readonly value: 'CANCELLED' },
+              { readonly name: 'PARTIALLY_REFUNDED'; readonly value: 'PARTIALLY_REFUNDED' },
+              { readonly name: 'REFUNDED'; readonly value: 'REFUNDED' },
+            ];
+          };
+          readonly PayoutMethod: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'BKASH'; readonly value: 'BKASH' },
+              { readonly name: 'NAGAD'; readonly value: 'NAGAD' },
+              { readonly name: 'ROCKET'; readonly value: 'ROCKET' },
+            ];
+          };
+          readonly PayoutStatus: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'PENDING'; readonly value: 'PENDING' },
+              { readonly name: 'APPROVED'; readonly value: 'APPROVED' },
+              { readonly name: 'PROCESSING'; readonly value: 'PROCESSING' },
+              { readonly name: 'PAID'; readonly value: 'PAID' },
+              { readonly name: 'FAILED'; readonly value: 'FAILED' },
+              { readonly name: 'REJECTED'; readonly value: 'REJECTED' },
+              { readonly name: 'CANCELLED'; readonly value: 'CANCELLED' },
             ];
           };
           readonly RefundStatus: {
@@ -3338,6 +3944,22 @@ type ContractBase = Omit<
             { readonly name: 'PENDING'; readonly value: 'PENDING' },
             { readonly name: 'SUCCEEDED'; readonly value: 'SUCCEEDED' },
             { readonly name: 'FAILED'; readonly value: 'FAILED' },
+            { readonly name: 'CANCELLED'; readonly value: 'CANCELLED' },
+            { readonly name: 'PARTIALLY_REFUNDED'; readonly value: 'PARTIALLY_REFUNDED' },
+            { readonly name: 'REFUNDED'; readonly value: 'REFUNDED' },
+          ];
+          readonly PayoutMethod: readonly [
+            { readonly name: 'BKASH'; readonly value: 'BKASH' },
+            { readonly name: 'NAGAD'; readonly value: 'NAGAD' },
+            { readonly name: 'ROCKET'; readonly value: 'ROCKET' },
+          ];
+          readonly PayoutStatus: readonly [
+            { readonly name: 'PENDING'; readonly value: 'PENDING' },
+            { readonly name: 'APPROVED'; readonly value: 'APPROVED' },
+            { readonly name: 'PROCESSING'; readonly value: 'PROCESSING' },
+            { readonly name: 'PAID'; readonly value: 'PAID' },
+            { readonly name: 'FAILED'; readonly value: 'FAILED' },
+            { readonly name: 'REJECTED'; readonly value: 'REJECTED' },
             { readonly name: 'CANCELLED'; readonly value: 'CANCELLED' },
           ];
           readonly RefundStatus: readonly [
@@ -3592,6 +4214,35 @@ type ContractBase = Omit<
           };
           readonly ref: {
             readonly entry: 'tutor_availability';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'tutor_payouts';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'tutor_payouts';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };
