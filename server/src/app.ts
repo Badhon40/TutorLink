@@ -9,6 +9,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import studentRoutes from "./modules/students/student.routes";
 import tutorRoutes from "./modules/tutors/tutor.routes";
 import bookingRoutes from "./modules/bookings/booking.routes";
+import paymentRoutes from "./modules/payments/payment.routes";
 
 const app = express();
 
@@ -65,6 +66,9 @@ app.use("/api/tutors", tutorRoutes);
 
 // Booking routes
 app.use("/api/bookings", bookingRoutes);
+
+// Payment routes
+app.use("/api/payments", paymentRoutes);
 
 // Global error handler
 
