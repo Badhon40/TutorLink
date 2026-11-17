@@ -1,4 +1,3 @@
-
 import type { Request, Response } from "express";
 
 import type { AuthenticatedUser } from "../../middlewares/auth.middleware";
@@ -7,6 +6,7 @@ import { ApiResponse } from "../../utils/ApiResponse";
 
 import {
   getStudentProfile,
+  getStudentProfileById,
   saveStudentProfile,
 } from "./student.service";
 
@@ -30,6 +30,28 @@ export const getMyStudentProfile = async (
   );
 };
 
+// GET /api/students/:studentId
+export const getStudentProfileDetails = async (
+  req: Request,
+  res: Response
+) => {
+  const studentId = Number(req.params.studentId);
+
+  if (!Number.isInteger(studentId) || studentId <= 0) {
+    throw new ApiError(400, "Invalid student ID");
+  }
+
+  const profile = await getStudentProfileById(studentId);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      "Student profile retrieved successfully",
+      profile
+    )
+  );
+};
+
 // PATCH /api/students/me
 export const updateMyStudentProfile = async (
   req: Request,
@@ -40,7 +62,7 @@ export const updateMyStudentProfile = async (
   const parsed = studentProfileSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new ApiError(400, "Invalid student profile data");
+    throw new ApiError(400, "Invalid student profile data", parsed.error.flatten().fieldErrors);
   }
 
   const profile = await saveStudentProfile(
@@ -51,7 +73,7 @@ export const updateMyStudentProfile = async (
   return res.status(200).json(
     new ApiResponse(
       200,
-      "Student profile saved successfully",
+      "Student profile updated successfully",
       profile
     )
   );

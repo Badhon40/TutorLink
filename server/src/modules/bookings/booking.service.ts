@@ -1,8 +1,12 @@
-
 import { db } from "../../prisma/db";
 import { ApiError } from "../../utils/ApiError";
 import type { CreateBookingInput } from "./booking.validation";
 import { isWithinTutorAvailability } from "./booking.helpers";
+import {
+  notifyBookingRequested,
+  notifyBookingDecision,
+} from "../notifications/telegram.service";
+import { createNotification } from "../notifications/notification.service";
 
 export const createBooking = async (
   studentUserId: number,
@@ -16,6 +20,8 @@ export const createBooking = async (
   if (!student) {
     throw new ApiError(404, "Student profile not found");
   }
+
+  const studentUser = await db.orm.public.User.where({ id: studentUserId }).first();
 
   // Find the tutor's profile.
   const tutor = await db.orm.public.TutorProfile
@@ -94,7 +100,7 @@ export const createBooking = async (
     throw new ApiError(400, "Tutor hourly rate is invalid");
   }
 
-  return db.orm.public.Booking.create({
+  const booking = await db.orm.public.Booking.create({
     studentId: student.id,
     tutorId: tutor.id,
     startAt,
@@ -105,6 +111,27 @@ export const createBooking = async (
     status: "PENDING",
     studentMessage: input.studentMessage ?? null,
   });
+
+  // Dispatch notifications (Telegram & In-App)
+  const tutorUser = await db.orm.public.User.where({ id: tutor.userId }).first();
+  if (tutorUser) {
+    await notifyBookingRequested(tutorUser.phone || null, {
+      bookingId: booking.id,
+      studentName: studentUser?.name || "Student",
+      startAt,
+      durationMin: input.durationMin,
+      amount: totalAmount.toFixed(2),
+    }).catch(() => null);
+
+    await createNotification(
+      tutorUser.id,
+      "BOOKING_UPDATE",
+      "New Booking Request",
+      `Student ${studentUser?.name || "Someone"} requested a ${input.durationMin}-min tutoring session.`
+    );
+  }
+
+  return booking;
 };
 
 export const getBookingById = async (bookingId: number) => {
@@ -118,8 +145,6 @@ export const getBookingById = async (bookingId: number) => {
 
   return booking;
 };
-
-
 
 type BookingUserRole = "STUDENT" | "TUTOR";
 
@@ -190,8 +215,6 @@ export const getMyBookings = async (
   };
 };
 
-
-
 export const respondToBooking = async (
   tutorUserId: number,
   bookingId: number,
@@ -206,6 +229,8 @@ export const respondToBooking = async (
   if (!tutor) {
     throw new ApiError(404, "Tutor profile not found");
   }
+
+  const tutorUser = await db.orm.public.User.where({ id: tutorUserId }).first();
 
   // Find the booking.
   const booking = await getBookingById(bookingId);
@@ -227,15 +252,37 @@ export const respondToBooking = async (
   }
 
   // Update booking status.
-  return await db.orm.public.Booking
+  const updatedBooking = await db.orm.public.Booking
     .where({ id: bookingId })
     .update({
       status: decision,
       tutorMessage: tutorMessage ?? null,
     });
+
+  // Notify student (Telegram & In-App)
+  const student = await db.orm.public.StudentProfile.where({ id: booking.studentId }).first();
+  const studentUser = student
+    ? await db.orm.public.User.where({ id: student.userId }).first()
+    : null;
+
+  if (studentUser) {
+    await notifyBookingDecision(studentUser.phone || null, {
+      bookingId: booking.id,
+      tutorName: tutorUser?.name || "Tutor",
+      decision,
+      tutorMessage,
+    }).catch(() => null);
+
+    await createNotification(
+      studentUser.id,
+      "BOOKING_UPDATE",
+      `Booking ${decision}`,
+      `Your booking request #${booking.id} was ${decision.toLowerCase()} by ${tutorUser?.name || "the tutor"}.`
+    );
+  }
+
+  return updatedBooking;
 };
-
-
 
 export const cancelBooking = async (
   userId: number,
@@ -296,8 +343,6 @@ export const cancelBooking = async (
     });
 };
 
-
-
 export const completeBooking = async (
   tutorUserId: number,
   bookingId: number
@@ -338,9 +383,54 @@ export const completeBooking = async (
     );
   }
 
-  return await db.orm.public.Booking
+  const updatedBooking = await db.orm.public.Booking
     .where({ id: bookingId })
     .update({
       status: "COMPLETED",
     });
+
+  // Calculate 10% platform commission model (Section 3.7)
+  const grossAmount = Number(booking.totalAmount);
+  const commissionRate = 0.10;
+  const commissionAmount = Number((grossAmount * commissionRate).toFixed(2));
+  const netAmount = Number((grossAmount - commissionAmount).toFixed(2));
+
+  // Auto-generate tutor payout record
+  try {
+    let existingPayout = null;
+    try {
+      existingPayout = await db.orm.public.TutorPayout
+        .where({ bookingId: booking.id })
+        .first();
+    } catch {
+      existingPayout = null;
+    }
+
+    if (!existingPayout && tutor.payoutMethod && tutor.accountNumber) {
+      await db.orm.public.TutorPayout.create({
+        bookingId: booking.id,
+        tutorProfileId: tutor.id,
+        grossAmount: grossAmount.toFixed(2),
+        commissionRate: commissionRate.toFixed(2),
+        commissionAmount: commissionAmount.toFixed(2),
+        netAmount: netAmount.toFixed(2),
+        currency: "BDT",
+        payoutMethod: tutor.payoutMethod,
+        payoutAccountNumber: tutor.accountNumber,
+        status: "PENDING",
+      });
+    }
+  } catch (err) {
+    console.warn("Could not create payout record for completed booking:", err);
+  }
+
+  // Notify tutor
+  await createNotification(
+    tutorUserId,
+    "BOOKING_UPDATE",
+    "Session Completed",
+    `Booking #${booking.id} is marked complete. Net earnings: ৳${netAmount} BDT (10% platform commission applied).`
+  );
+
+  return updatedBooking;
 };

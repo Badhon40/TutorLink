@@ -14,10 +14,12 @@ export const globalErrorHandler: ErrorRequestHandler = (
 
   let statusCode = 500;
   let message = "Internal server error";
+  let errors: unknown = undefined;
 
   if (error instanceof ApiError) {
     statusCode = error.statusCode;
     message = error.message;
+    errors = error.errors;
   } else if (error instanceof SyntaxError && "status" in error) {
     const bodyError = error as SyntaxError & { status?: number };
 
@@ -35,6 +37,6 @@ export const globalErrorHandler: ErrorRequestHandler = (
     success: false,
     statusCode,
     message,
+    ...(errors !== undefined ? { errors } : {}),
   });
 };
-

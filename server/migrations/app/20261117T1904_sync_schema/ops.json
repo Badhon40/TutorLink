@@ -1,0 +1,1368 @@
+[
+  {
+    "id": "dropCheckConstraint.payments.payments_status_check_70878036",
+    "label": "Drop check constraint \"payments_status_check_70878036\" on \"payments\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "payments_status_check_70878036",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"payments_status_check_70878036\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_status_check_70878036",
+          "public",
+          "\"public\".\"payments\""
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "constraint \"payments_status_check_70878036\" on \"payments\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"payments_status_check_70878036\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" DROP CONSTRAINT \"payments_status_check_70878036\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"payments_status_check_70878036\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_status_check_70878036",
+          "public",
+          "\"public\".\"payments\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"payments_status_check_70878036\" on \"payments\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.refresh_tokens",
+    "label": "Create table \"refresh_tokens\"",
+    "summary": "Creates table \"refresh_tokens\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "refresh_tokens"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"refresh_tokens\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"refresh_tokens\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"refresh_tokens\"",
+        "sql": "CREATE TABLE \"public\".\"refresh_tokens\" (\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamptz(3) NOT NULL,\n  \"familyId\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"revokedAt\" timestamptz(3),\n  \"tokenHash\" text NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"refresh_tokens\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"refresh_tokens\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.tutor_payouts",
+    "label": "Create table \"tutor_payouts\"",
+    "summary": "Creates table \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"tutor_payouts\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"tutor_payouts\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"tutor_payouts\"",
+        "sql": "CREATE TABLE \"public\".\"tutor_payouts\" (\n  \"adminNote\" text,\n  \"approvedAt\" timestamptz(3),\n  \"approvedById\" int4,\n  \"bookingId\" int4 NOT NULL,\n  \"commissionAmount\" numeric NOT NULL,\n  \"commissionRate\" numeric NOT NULL,\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'BDT' NOT NULL,\n  \"grossAmount\" numeric NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"netAmount\" numeric NOT NULL,\n  \"paidAt\" timestamptz(3),\n  \"paidById\" int4,\n  \"payoutAccountNumber\" text NOT NULL,\n  \"payoutMethod\" text NOT NULL,\n  \"status\" text DEFAULT 'PENDING' NOT NULL,\n  \"transferReference\" text,\n  \"tutorProfileId\" int4 NOT NULL,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"tutor_payouts_payoutMethod_check_d9dc71d8\" CHECK (\"payoutMethod\" IN ('BKASH', 'NAGAD', 'ROCKET')),\n  CONSTRAINT \"tutor_payouts_status_check_371b29a4\" CHECK (\"status\" IN ('PENDING', 'APPROVED', 'PROCESSING', 'PAID', 'FAILED', 'REJECTED', 'CANCELLED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"tutor_payouts\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"tutor_payouts\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "column.public.payments.checkoutUrl",
+    "label": "Add column \"checkoutUrl\" to \"payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "checkoutUrl",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"checkoutUrl\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "checkoutUrl"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"checkoutUrl\" on \"payments\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"checkoutUrl\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD COLUMN \"checkoutUrl\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"checkoutUrl\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "checkoutUrl"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"checkoutUrl\" on \"payments\""
+        }
+      },
+      {
+        "description": "verify column \"checkoutUrl\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "checkoutUrl",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.payments.idempotencyKey",
+    "label": "Add column \"idempotencyKey\" to \"payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "idempotencyKey",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"idempotencyKey\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "idempotencyKey"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"idempotencyKey\" on \"payments\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"idempotencyKey\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD COLUMN \"idempotencyKey\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"idempotencyKey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "idempotencyKey"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"idempotencyKey\" on \"payments\""
+        }
+      },
+      {
+        "description": "verify column \"idempotencyKey\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "idempotencyKey",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.payments.providerSessionId",
+    "label": "Add column \"providerSessionId\" to \"payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "providerSessionId",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"providerSessionId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "providerSessionId"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"providerSessionId\" on \"payments\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"providerSessionId\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD COLUMN \"providerSessionId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"providerSessionId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "providerSessionId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"providerSessionId\" on \"payments\""
+        }
+      },
+      {
+        "description": "verify column \"providerSessionId\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "payments",
+          "providerSessionId",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.tutor_profiles.payoutMethod",
+    "label": "Add column \"payoutMethod\" to \"tutor_profiles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "payoutMethod",
+        "table": "tutor_profiles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"payoutMethod\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "tutor_profiles",
+          "payoutMethod"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"payoutMethod\" on \"tutor_profiles\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"payoutMethod\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_profiles\" ADD COLUMN \"payoutMethod\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"payoutMethod\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "tutor_profiles",
+          "payoutMethod"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"payoutMethod\" on \"tutor_profiles\""
+        }
+      },
+      {
+        "description": "verify column \"payoutMethod\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "tutor_profiles",
+          "payoutMethod",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.payments.payments_status_check_8b1e8c18",
+    "label": "Add check constraint \"payments_status_check_8b1e8c18\" on \"payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "payments_status_check_8b1e8c18",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"payments_status_check_8b1e8c18\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_status_check_8b1e8c18",
+          "public",
+          "\"public\".\"payments\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"payments_status_check_8b1e8c18\" on \"payments\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"payments_status_check_8b1e8c18\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD CONSTRAINT \"payments_status_check_8b1e8c18\" CHECK (\"status\" IN ('PENDING', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'PARTIALLY_REFUNDED', 'REFUNDED'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify check constraint \"payments_status_check_8b1e8c18\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4)) AS \"result\"",
+        "params": [
+          "payments_status_check_8b1e8c18",
+          "public",
+          "\"public\".\"payments\"",
+          "c"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.payments.payments_idempotencyKey_key",
+    "label": "Add unique constraint on \"payments\" (idempotencyKey)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "payments_idempotencyKey_key",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"payments_idempotencyKey_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_idempotencyKey_key",
+          "public",
+          "\"public\".\"payments\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"payments_idempotencyKey_key\" on \"payments\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"payments_idempotencyKey_key\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD CONSTRAINT \"payments_idempotencyKey_key\" UNIQUE (\"idempotencyKey\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"payments_idempotencyKey_key\" exists on (idempotencyKey)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "payments_idempotencyKey_key",
+          "public",
+          "\"public\".\"payments\"",
+          "u",
+          "[\"idempotencyKey\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.payments.payments_providerSessionId_key",
+    "label": "Add unique constraint on \"payments\" (providerSessionId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "payments_providerSessionId_key",
+        "table": "payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"payments_providerSessionId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "payments_providerSessionId_key",
+          "public",
+          "\"public\".\"payments\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"payments_providerSessionId_key\" on \"payments\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"payments_providerSessionId_key\"",
+        "sql": "ALTER TABLE \"public\".\"payments\" ADD CONSTRAINT \"payments_providerSessionId_key\" UNIQUE (\"providerSessionId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"payments_providerSessionId_key\" exists on (providerSessionId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "payments_providerSessionId_key",
+          "public",
+          "\"public\".\"payments\"",
+          "u",
+          "[\"providerSessionId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.refresh_tokens.refresh_tokens_tokenHash_key",
+    "label": "Add unique constraint on \"refresh_tokens\" (tokenHash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "refresh_tokens_tokenHash_key",
+        "table": "refresh_tokens"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"refresh_tokens_tokenHash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "refresh_tokens_tokenHash_key",
+          "public",
+          "\"public\".\"refresh_tokens\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"refresh_tokens_tokenHash_key\" on \"refresh_tokens\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"refresh_tokens_tokenHash_key\"",
+        "sql": "ALTER TABLE \"public\".\"refresh_tokens\" ADD CONSTRAINT \"refresh_tokens_tokenHash_key\" UNIQUE (\"tokenHash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"refresh_tokens_tokenHash_key\" exists on (tokenHash)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "refresh_tokens_tokenHash_key",
+          "public",
+          "\"public\".\"refresh_tokens\"",
+          "u",
+          "[\"tokenHash\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.tutor_payouts.tutor_payouts_bookingId_key",
+    "label": "Add unique constraint on \"tutor_payouts\" (bookingId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "tutor_payouts_bookingId_key",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"tutor_payouts_bookingId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "tutor_payouts_bookingId_key",
+          "public",
+          "\"public\".\"tutor_payouts\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"tutor_payouts_bookingId_key\" on \"tutor_payouts\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"tutor_payouts_bookingId_key\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_payouts\" ADD CONSTRAINT \"tutor_payouts_bookingId_key\" UNIQUE (\"bookingId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"tutor_payouts_bookingId_key\" exists on (bookingId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "tutor_payouts_bookingId_key",
+          "public",
+          "\"public\".\"tutor_payouts\"",
+          "u",
+          "[\"bookingId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.tutor_payouts.tutor_payouts_transferReference_key",
+    "label": "Add unique constraint on \"tutor_payouts\" (transferReference)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "tutor_payouts_transferReference_key",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"tutor_payouts_transferReference_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "tutor_payouts_transferReference_key",
+          "public",
+          "\"public\".\"tutor_payouts\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"tutor_payouts_transferReference_key\" on \"tutor_payouts\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"tutor_payouts_transferReference_key\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_payouts\" ADD CONSTRAINT \"tutor_payouts_transferReference_key\" UNIQUE (\"transferReference\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"tutor_payouts_transferReference_key\" exists on (transferReference)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "tutor_payouts_transferReference_key",
+          "public",
+          "\"public\".\"tutor_payouts\"",
+          "u",
+          "[\"transferReference\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.tutor_profiles.tutor_profiles_payoutMethod_check_d9dc71d8",
+    "label": "Add check constraint \"tutor_profiles_payoutMethod_check_d9dc71d8\" on \"tutor_profiles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "tutor_profiles_payoutMethod_check_d9dc71d8",
+        "table": "tutor_profiles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"tutor_profiles_payoutMethod_check_d9dc71d8\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "tutor_profiles_payoutMethod_check_d9dc71d8",
+          "public",
+          "\"public\".\"tutor_profiles\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"tutor_profiles_payoutMethod_check_d9dc71d8\" on \"tutor_profiles\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"tutor_profiles_payoutMethod_check_d9dc71d8\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_profiles\" ADD CONSTRAINT \"tutor_profiles_payoutMethod_check_d9dc71d8\" CHECK (\"payoutMethod\" IN ('BKASH', 'NAGAD', 'ROCKET'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify check constraint \"tutor_profiles_payoutMethod_check_d9dc71d8\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4)) AS \"result\"",
+        "params": [
+          "tutor_profiles_payoutMethod_check_d9dc71d8",
+          "public",
+          "\"public\".\"tutor_profiles\"",
+          "c"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.refresh_tokens.refresh_tokens_expiresAt_idx_6b6b8c10",
+    "label": "Create index \"refresh_tokens_expiresAt_idx_6b6b8c10\" on \"refresh_tokens\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "refresh_tokens_expiresAt_idx_6b6b8c10",
+        "table": "refresh_tokens"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"refresh_tokens_expiresAt_idx_6b6b8c10\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens_expiresAt_idx_6b6b8c10\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"refresh_tokens_expiresAt_idx_6b6b8c10\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"refresh_tokens_expiresAt_idx_6b6b8c10\"",
+        "sql": "CREATE INDEX \"refresh_tokens_expiresAt_idx_6b6b8c10\" ON \"public\".\"refresh_tokens\" (\"expiresAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"refresh_tokens_expiresAt_idx_6b6b8c10\" exists on \"refresh_tokens\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens_expiresAt_idx_6b6b8c10\"",
+          "i",
+          "I",
+          "\"public\".\"refresh_tokens\"",
+          "btree",
+          "[\"expiresAt\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.refresh_tokens.refresh_tokens_familyId_idx_3d03045e",
+    "label": "Create index \"refresh_tokens_familyId_idx_3d03045e\" on \"refresh_tokens\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "refresh_tokens_familyId_idx_3d03045e",
+        "table": "refresh_tokens"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"refresh_tokens_familyId_idx_3d03045e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens_familyId_idx_3d03045e\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"refresh_tokens_familyId_idx_3d03045e\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"refresh_tokens_familyId_idx_3d03045e\"",
+        "sql": "CREATE INDEX \"refresh_tokens_familyId_idx_3d03045e\" ON \"public\".\"refresh_tokens\" (\"familyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"refresh_tokens_familyId_idx_3d03045e\" exists on \"refresh_tokens\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens_familyId_idx_3d03045e\"",
+          "i",
+          "I",
+          "\"public\".\"refresh_tokens\"",
+          "btree",
+          "[\"familyId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.refresh_tokens.refresh_tokens_userId_idx_a489d58a",
+    "label": "Create index \"refresh_tokens_userId_idx_a489d58a\" on \"refresh_tokens\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "refresh_tokens_userId_idx_a489d58a",
+        "table": "refresh_tokens"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"refresh_tokens_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens_userId_idx_a489d58a\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"refresh_tokens_userId_idx_a489d58a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"refresh_tokens_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"refresh_tokens_userId_idx_a489d58a\" ON \"public\".\"refresh_tokens\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"refresh_tokens_userId_idx_a489d58a\" exists on \"refresh_tokens\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"refresh_tokens_userId_idx_a489d58a\"",
+          "i",
+          "I",
+          "\"public\".\"refresh_tokens\"",
+          "btree",
+          "[\"userId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.tutor_payouts.tutor_payouts_approvedById_idx_01ef8410",
+    "label": "Create index \"tutor_payouts_approvedById_idx_01ef8410\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "tutor_payouts_approvedById_idx_01ef8410",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"tutor_payouts_approvedById_idx_01ef8410\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_approvedById_idx_01ef8410\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"tutor_payouts_approvedById_idx_01ef8410\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"tutor_payouts_approvedById_idx_01ef8410\"",
+        "sql": "CREATE INDEX \"tutor_payouts_approvedById_idx_01ef8410\" ON \"public\".\"tutor_payouts\" (\"approvedById\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"tutor_payouts_approvedById_idx_01ef8410\" exists on \"tutor_payouts\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_approvedById_idx_01ef8410\"",
+          "i",
+          "I",
+          "\"public\".\"tutor_payouts\"",
+          "btree",
+          "[\"approvedById\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.tutor_payouts.tutor_payouts_createdAt_idx_9575dbd7",
+    "label": "Create index \"tutor_payouts_createdAt_idx_9575dbd7\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "tutor_payouts_createdAt_idx_9575dbd7",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"tutor_payouts_createdAt_idx_9575dbd7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_createdAt_idx_9575dbd7\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"tutor_payouts_createdAt_idx_9575dbd7\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"tutor_payouts_createdAt_idx_9575dbd7\"",
+        "sql": "CREATE INDEX \"tutor_payouts_createdAt_idx_9575dbd7\" ON \"public\".\"tutor_payouts\" (\"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"tutor_payouts_createdAt_idx_9575dbd7\" exists on \"tutor_payouts\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_createdAt_idx_9575dbd7\"",
+          "i",
+          "I",
+          "\"public\".\"tutor_payouts\"",
+          "btree",
+          "[\"createdAt\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.tutor_payouts.tutor_payouts_paidById_idx_406e50ef",
+    "label": "Create index \"tutor_payouts_paidById_idx_406e50ef\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "tutor_payouts_paidById_idx_406e50ef",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"tutor_payouts_paidById_idx_406e50ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_paidById_idx_406e50ef\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"tutor_payouts_paidById_idx_406e50ef\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"tutor_payouts_paidById_idx_406e50ef\"",
+        "sql": "CREATE INDEX \"tutor_payouts_paidById_idx_406e50ef\" ON \"public\".\"tutor_payouts\" (\"paidById\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"tutor_payouts_paidById_idx_406e50ef\" exists on \"tutor_payouts\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_paidById_idx_406e50ef\"",
+          "i",
+          "I",
+          "\"public\".\"tutor_payouts\"",
+          "btree",
+          "[\"paidById\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.tutor_payouts.tutor_payouts_status_idx_e98638ab",
+    "label": "Create index \"tutor_payouts_status_idx_e98638ab\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "tutor_payouts_status_idx_e98638ab",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"tutor_payouts_status_idx_e98638ab\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_status_idx_e98638ab\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"tutor_payouts_status_idx_e98638ab\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"tutor_payouts_status_idx_e98638ab\"",
+        "sql": "CREATE INDEX \"tutor_payouts_status_idx_e98638ab\" ON \"public\".\"tutor_payouts\" (\"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"tutor_payouts_status_idx_e98638ab\" exists on \"tutor_payouts\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_status_idx_e98638ab\"",
+          "i",
+          "I",
+          "\"public\".\"tutor_payouts\"",
+          "btree",
+          "[\"status\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.tutor_payouts.tutor_payouts_tutorProfileId_idx_c9a9af10",
+    "label": "Create index \"tutor_payouts_tutorProfileId_idx_c9a9af10\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "tutor_payouts_tutorProfileId_idx_c9a9af10",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"tutor_payouts_tutorProfileId_idx_c9a9af10\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_tutorProfileId_idx_c9a9af10\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"tutor_payouts_tutorProfileId_idx_c9a9af10\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"tutor_payouts_tutorProfileId_idx_c9a9af10\"",
+        "sql": "CREATE INDEX \"tutor_payouts_tutorProfileId_idx_c9a9af10\" ON \"public\".\"tutor_payouts\" (\"tutorProfileId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"tutor_payouts_tutorProfileId_idx_c9a9af10\" exists on \"tutor_payouts\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"tutor_payouts_tutorProfileId_idx_c9a9af10\"",
+          "i",
+          "I",
+          "\"public\".\"tutor_payouts\"",
+          "btree",
+          "[\"tutorProfileId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.refresh_tokens.refresh_tokens_userId_fkey",
+    "label": "Add foreign key \"refresh_tokens_userId_fkey\" on \"refresh_tokens\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "refresh_tokens_userId_fkey",
+        "table": "refresh_tokens"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"refresh_tokens_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "refresh_tokens_userId_fkey",
+          "public",
+          "\"public\".\"refresh_tokens\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"refresh_tokens_userId_fkey\" on \"refresh_tokens\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"refresh_tokens_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"refresh_tokens\"\nADD CONSTRAINT \"refresh_tokens_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"refresh_tokens_userId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "refresh_tokens_userId_fkey",
+          "public",
+          "\"public\".\"refresh_tokens\"",
+          "f",
+          "[\"userId\"]",
+          "\"public\".\"users\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.tutor_payouts.tutor_payouts_bookingId_fkey",
+    "label": "Add foreign key \"tutor_payouts_bookingId_fkey\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "tutor_payouts_bookingId_fkey",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"tutor_payouts_bookingId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "tutor_payouts_bookingId_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"tutor_payouts_bookingId_fkey\" on \"tutor_payouts\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"tutor_payouts_bookingId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_payouts\"\nADD CONSTRAINT \"tutor_payouts_bookingId_fkey\"\nFOREIGN KEY (\"bookingId\")\nREFERENCES \"public\".\"bookings\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"tutor_payouts_bookingId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "tutor_payouts_bookingId_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\"",
+          "f",
+          "[\"bookingId\"]",
+          "\"public\".\"bookings\"",
+          "[\"id\"]",
+          "a",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.tutor_payouts.tutor_payouts_tutorProfileId_fkey",
+    "label": "Add foreign key \"tutor_payouts_tutorProfileId_fkey\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "tutor_payouts_tutorProfileId_fkey",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"tutor_payouts_tutorProfileId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "tutor_payouts_tutorProfileId_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"tutor_payouts_tutorProfileId_fkey\" on \"tutor_payouts\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"tutor_payouts_tutorProfileId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_payouts\"\nADD CONSTRAINT \"tutor_payouts_tutorProfileId_fkey\"\nFOREIGN KEY (\"tutorProfileId\")\nREFERENCES \"public\".\"tutor_profiles\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"tutor_payouts_tutorProfileId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "tutor_payouts_tutorProfileId_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\"",
+          "f",
+          "[\"tutorProfileId\"]",
+          "\"public\".\"tutor_profiles\"",
+          "[\"id\"]",
+          "a",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.tutor_payouts.tutor_payouts_approvedById_fkey",
+    "label": "Add foreign key \"tutor_payouts_approvedById_fkey\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "tutor_payouts_approvedById_fkey",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"tutor_payouts_approvedById_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "tutor_payouts_approvedById_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"tutor_payouts_approvedById_fkey\" on \"tutor_payouts\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"tutor_payouts_approvedById_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_payouts\"\nADD CONSTRAINT \"tutor_payouts_approvedById_fkey\"\nFOREIGN KEY (\"approvedById\")\nREFERENCES \"public\".\"users\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"tutor_payouts_approvedById_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "tutor_payouts_approvedById_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\"",
+          "f",
+          "[\"approvedById\"]",
+          "\"public\".\"users\"",
+          "[\"id\"]",
+          "a",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.tutor_payouts.tutor_payouts_paidById_fkey",
+    "label": "Add foreign key \"tutor_payouts_paidById_fkey\" on \"tutor_payouts\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "tutor_payouts_paidById_fkey",
+        "table": "tutor_payouts"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"tutor_payouts_paidById_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "tutor_payouts_paidById_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"tutor_payouts_paidById_fkey\" on \"tutor_payouts\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"tutor_payouts_paidById_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"tutor_payouts\"\nADD CONSTRAINT \"tutor_payouts_paidById_fkey\"\nFOREIGN KEY (\"paidById\")\nREFERENCES \"public\".\"users\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"tutor_payouts_paidById_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "tutor_payouts_paidById_fkey",
+          "public",
+          "\"public\".\"tutor_payouts\"",
+          "f",
+          "[\"paidById\"]",
+          "\"public\".\"users\"",
+          "[\"id\"]",
+          "a",
+          "a"
+        ]
+      }
+    ]
+  }
+]

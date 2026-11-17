@@ -1,9 +1,10 @@
-
 import type { Request, Response } from "express";
 
 import type { AuthenticatedUser } from "../../middlewares/auth.middleware";
+import { db } from "../../prisma/db";
 import { ApiError } from "../../utils/ApiError";
 import { ApiResponse } from "../../utils/ApiResponse";
+import { env } from "../../config/env";
 
 import {
   createBooking,
@@ -32,7 +33,7 @@ export const createMyBooking = async (
   const parsed = createBookingSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new ApiError(400, "Invalid booking data");
+    throw new ApiError(400, "Invalid booking data", parsed.error.flatten().fieldErrors);
   }
 
   const booking = await createBooking(auth.userId, parsed.data);
@@ -50,27 +51,27 @@ export const getBooking = async (
   const parsed = bookingIdSchema.safeParse(req.params);
 
   if (!parsed.success) {
-    throw new ApiError(400, "Invalid booking ID");
+    throw new ApiError(400, "Invalid booking ID", parsed.error.flatten().fieldErrors);
   }
 
   const booking = await getBookingById(parsed.data.bookingId);
   const auth = res.locals.auth as AuthenticatedUser;
 
-  // Only the student or tutor involved can view the booking.
+  // Only the student or tutor involved (or admin) can view the booking.
   let authorized = false;
 
   if (auth.role === "STUDENT") {
-    const profile = await import("../../prisma/db.js").then(({ db }) =>
-      db.orm.public.StudentProfile.where({ userId: auth.userId }).first()
-    );
+    const profile = await db.orm.public.StudentProfile
+      .where({ userId: auth.userId })
+      .first();
 
     authorized = profile?.id === booking.studentId;
   }
 
   if (auth.role === "TUTOR") {
-    const profile = await import("../../prisma/db.js").then(({ db }) =>
-      db.orm.public.TutorProfile.where({ userId: auth.userId }).first()
-    );
+    const profile = await db.orm.public.TutorProfile
+      .where({ userId: auth.userId })
+      .first();
 
     authorized = profile?.id === booking.tutorId;
   }
@@ -98,7 +99,7 @@ export const listMyBookings = async (
   const parsed = bookingListQuerySchema.safeParse(req.query);
 
   if (!parsed.success) {
-    throw new ApiError(400, "Invalid booking query parameters");
+    throw new ApiError(400, "Invalid booking query parameters", parsed.error.flatten().fieldErrors);
   }
 
   const result = await getMyBookings(
@@ -122,8 +123,12 @@ export const respondToMyBooking = async (
   const params = bookingIdSchema.safeParse(req.params);
   const body = bookingDecisionSchema.safeParse(req.body);
 
-  if (!params.success || !body.success) {
-    throw new ApiError(400, "Invalid booking response data");
+  if (!params.success) {
+    throw new ApiError(400, "Invalid booking ID", params.error.flatten().fieldErrors);
+  }
+
+  if (!body.success) {
+    throw new ApiError(400, "Invalid booking response decision", body.error.flatten().fieldErrors);
   }
 
   const booking = await respondToBooking(
@@ -152,8 +157,12 @@ export const cancelMyBooking = async (
   const params = bookingIdSchema.safeParse(req.params);
   const body = cancelBookingSchema.safeParse(req.body);
 
-  if (!params.success || !body.success) {
-    throw new ApiError(400, "Invalid cancellation data");
+  if (!params.success) {
+    throw new ApiError(400, "Invalid booking ID", params.error.flatten().fieldErrors);
+  }
+
+  if (!body.success) {
+    throw new ApiError(400, "Invalid cancellation reason", body.error.flatten().fieldErrors);
   }
 
   const booking = await cancelBooking(
@@ -178,7 +187,7 @@ export const completeMyBooking = async (
   const params = bookingIdSchema.safeParse(req.params);
 
   if (!params.success) {
-    throw new ApiError(400, "Invalid booking ID");
+    throw new ApiError(400, "Invalid booking ID", params.error.flatten().fieldErrors);
   }
 
   const booking = await completeBooking(
@@ -188,5 +197,57 @@ export const completeMyBooking = async (
 
   return res.status(200).json(
     new ApiResponse(200, "Booking completed successfully", booking)
+  );
+};
+
+// Live class access endpoint (Section 3.6)
+export const getBookingLiveClass = async (
+  req: Request,
+  res: Response
+) => {
+  const auth = res.locals.auth as AuthenticatedUser;
+  const params = bookingIdSchema.safeParse(req.params);
+
+  if (!params.success) {
+    throw new ApiError(400, "Invalid booking ID", params.error.flatten().fieldErrors);
+  }
+
+  const booking = await getBookingById(params.data.bookingId);
+
+  // Check user participation
+  let isParticipant = false;
+  if (auth.role === "STUDENT") {
+    const student = await db.orm.public.StudentProfile.where({ userId: auth.userId }).first();
+    isParticipant = student?.id === booking.studentId;
+  } else if (auth.role === "TUTOR") {
+    const tutor = await db.orm.public.TutorProfile.where({ userId: auth.userId }).first();
+    isParticipant = tutor?.id === booking.tutorId;
+  } else if (auth.role === "ADMIN") {
+    isParticipant = true;
+  }
+
+  if (!isParticipant) {
+    throw new ApiError(403, "You are not authorized to join this class session");
+  }
+
+  if (booking.status !== "CONFIRMED") {
+    throw new ApiError(400, `Live class is only available for CONFIRMED bookings. Current status: ${booking.status}`);
+  }
+
+  // Generate deterministic secure room credentials
+  const roomId = `tutorlink-room-${booking.id}`;
+  const roomUrl = `${env.CLIENT_URL}/live-class/${roomId}`;
+
+  return res.status(200).json(
+    new ApiResponse(200, "Live class access generated successfully", {
+      bookingId: booking.id,
+      roomId,
+      roomUrl,
+      scheduledStartAt: booking.startAt,
+      scheduledEndAt: booking.endAt,
+      durationMin: booking.durationMin,
+      role: auth.role,
+      userId: auth.userId,
+    })
   );
 };

@@ -3,15 +3,14 @@ import type { Request, Response } from "express";
 import { env } from "../../config/env";
 import { ApiResponse } from "../../utils/ApiResponse";
 import { registerSchema, loginSchema } from "./auth.validation";
-import { registerUser, loginUser , refreshSession, logoutUser} from "./auth.service";
+import { registerUser, loginUser, refreshSession, logoutUser } from "./auth.service";
 import { ApiError } from "../../utils/ApiError";
-
 
 export const register = async (req: Request, res: Response) => {
   const parsed = registerSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new ApiError(400, "Invalid registration data");
+    throw new ApiError(400, "Invalid registration data", parsed.error.flatten().fieldErrors);
   }
 
   const user = await registerUser(parsed.data);
@@ -25,7 +24,7 @@ export const login = async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new ApiError(400, "Invalid login data");
+    throw new ApiError(400, "Invalid login data", parsed.error.flatten().fieldErrors);
   }
 
   const session = await loginUser(parsed.data);
@@ -71,7 +70,6 @@ export const refresh = async (req: Request, res: Response) => {
     })
   );
 };
-
 
 export const logout = async (req: Request, res: Response) => {
   const refreshToken = req.cookies?.refreshToken;

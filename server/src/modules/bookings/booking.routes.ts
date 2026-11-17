@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 
 import {
@@ -15,6 +14,7 @@ import {
   respondToMyBooking,
   cancelMyBooking,
   completeMyBooking,
+  getBookingLiveClass,
 } from "./booking.controller";
 
 const router = Router();
@@ -62,6 +62,13 @@ router.patch(
   "/:bookingId/complete",
   authorize("TUTOR"),
   catchAsync(completeMyBooking)
+);
+
+// Retrieve live class session access
+router.get(
+  "/:bookingId/live-class",
+  authorize("STUDENT", "TUTOR", "ADMIN"),
+  catchAsync(getBookingLiveClass)
 );
 
 export default router;

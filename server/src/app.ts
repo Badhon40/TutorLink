@@ -1,23 +1,39 @@
-
 import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+
 import { db } from "./prisma/db";
 import { corsMiddleware } from "./config/cors";
 import { globalErrorHandler } from "./middlewares/error.middleware";
-import { ApiError } from "./utils/ApiError";
-import cookieParser from "cookie-parser";
+import { env } from "./config/env";
+
 import authRoutes from "./modules/auth/auth.routes";
 import studentRoutes from "./modules/students/student.routes";
 import tutorRoutes from "./modules/tutors/tutor.routes";
 import bookingRoutes from "./modules/bookings/booking.routes";
 import paymentRoutes from "./modules/payments/payment.routes";
+import verificationRoutes from "./modules/verification/verification.routes";
+import reviewRoutes from "./modules/reviews/review.routes";
+import notificationRoutes from "./modules/notifications/notification.routes";
+import adminRoutes from "./modules/admin/admin.routes";
+import recommendationRoutes from "./modules/recommendations/recommendation.routes";
+import refundRoutes from "./modules/refunds/refund.routes";
 
 const app = express();
 
-// Global middleware
+// Security and Logging Middleware
+app.use(helmet());
+if (env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
+}
+
+// Global Parsers
 app.use(corsMiddleware);
 app.use(express.json());
+// URL-encoded parser required for payment gateway IPN and form redirects
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
 
 // Basic API route
 app.get("/", (_req, res) => {
@@ -35,7 +51,6 @@ app.get("/api/health", (_req, res) => {
 // Database health check
 app.get("/api/health/db", async (_req, res) => {
   try {
-    // Execute a real database query without retrieving all users
     await db.orm.public.User.first();
 
     res.status(200).json({
@@ -54,24 +69,22 @@ app.get("/api/health/db", async (_req, res) => {
   }
 });
 
-
-// Auth routes
+// Core Feature Routes
 app.use("/api/auth", authRoutes);
-
-// Student routes
 app.use("/api/students", studentRoutes);
-
-// Tutor routes
 app.use("/api/tutors", tutorRoutes);
-
-// Booking routes
 app.use("/api/bookings", bookingRoutes);
-
-// Payment routes
 app.use("/api/payments", paymentRoutes);
 
-// Global error handler
+// Extended Platform Routes
+app.use("/api/verification", verificationRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/recommendations", recommendationRoutes);
+app.use("/api/refunds", refundRoutes);
 
+// Global error handler
 app.use(globalErrorHandler);
 
 export default app;

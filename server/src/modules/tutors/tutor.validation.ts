@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 export const tutorProfileSchema = z
@@ -25,6 +24,8 @@ export const tutorProfileSchema = z
     profileImage: z.string().trim().max(2048).nullable().optional(),
 
     accountNumber: z.string().trim().max(50).nullable().optional(),
+
+    payoutMethod: z.enum(["BKASH", "NAGAD", "ROCKET"]).optional(),
   })
   .strict()
   .refine(
@@ -33,3 +34,20 @@ export const tutorProfileSchema = z
   );
 
 export type TutorProfileInput = z.infer<typeof tutorProfileSchema>;
+
+export const tutorQuerySchema = z.object({
+  search: z.string().trim().optional(),
+  subject: z.string().trim().optional(),
+  location: z.string().trim().optional(),
+  minRate: z.coerce.number().min(0).optional(),
+  maxRate: z.coerce.number().positive().optional(),
+  minRating: z.coerce.number().min(0).max(5).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(50).default(10),
+});
+
+export type TutorQueryInput = z.infer<typeof tutorQuerySchema>;
+
+export const tutorIdParamSchema = z.object({
+  tutorId: z.coerce.number().int().positive(),
+});

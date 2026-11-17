@@ -1,4 +1,3 @@
-
 import type { Request, Response } from "express";
 
 import type { AuthenticatedUser } from "../../middlewares/auth.middleware";
@@ -27,7 +26,7 @@ export const createMyAvailability = async (
   const parsed = availabilitySchema.safeParse(req.body);
 
   if (!parsed.success) {
-    throw new ApiError(400, "Invalid availability data");
+    throw new ApiError(400, "Invalid availability data", parsed.error.flatten().fieldErrors);
   }
 
   const availability = await createAvailability(
@@ -72,8 +71,12 @@ export const updateMyAvailability = async (
   const params = availabilityIdSchema.safeParse(req.params);
   const body = availabilitySchema.safeParse(req.body);
 
-  if (!params.success || !body.success) {
-    throw new ApiError(400, "Invalid availability data");
+  if (!params.success) {
+    throw new ApiError(400, "Invalid availability ID", params.error.flatten().fieldErrors);
+  }
+
+  if (!body.success) {
+    throw new ApiError(400, "Invalid availability data", body.error.flatten().fieldErrors);
   }
 
   const availability = await updateAvailability(
@@ -101,7 +104,7 @@ export const deleteMyAvailability = async (
   const params = availabilityIdSchema.safeParse(req.params);
 
   if (!params.success) {
-    throw new ApiError(400, "Invalid availability ID");
+    throw new ApiError(400, "Invalid availability ID", params.error.flatten().fieldErrors);
   }
 
   const result = await deleteAvailability(
