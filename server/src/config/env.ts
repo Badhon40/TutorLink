@@ -37,7 +37,8 @@ const envSchema = z.object({
   TELEGRAM_BOT_USERNAME: z.string().optional(),
 
   // Live class room secret
-  LIVE_CLASS_SECRET: z.string().default("tutorlink-live-class-secret-key-32chars"),
+  // Live Class Configuration
+  LIVE_CLASS_SECRET: z.string().min(32),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

@@ -88,6 +88,39 @@ ${
   await sendTelegramMessage(studentChatId, message);
 };
 
+// Dispatch live class join link to both student and tutor
+export const notifyLiveClassLink = async (
+  chatId: string | number | null | undefined,
+  details: {
+    bookingId: number;
+    role: "student" | "tutor";
+    otherPartyName: string;
+    scheduledStartAt: Date;
+    durationMin: number;
+    joinUrl: string;
+  }
+) => {
+  if (!chatId) return;
+
+  const roleLabel = details.role === "student" ? "🎓 Student" : "📚 Tutor";
+  const otherLabel = details.role === "student" ? "Tutor" : "Student";
+
+  const message = `🎥 *Your Live Class is Confirmed!*
+━━━━━━━━━━━━━━━━━━
+• *Booking ID:* #${details.bookingId}
+• *Role:* ${roleLabel}
+• *${otherLabel}:* ${details.otherPartyName}
+• *Scheduled Time:* ${details.scheduledStartAt.toLocaleString("en-GB", { timeZone: "Asia/Dhaka" })}
+• *Duration:* ${details.durationMin} minutes
+
+🔗 *Your Join Link:*
+${details.joinUrl}
+
+_The room opens 10 minutes before your session. Use the link above to join directly._`;
+
+  await sendTelegramMessage(chatId, message);
+};
+
 // Dispatch payment success notification
 export const notifyPaymentSuccess = async (
   chatId: string | number | null | undefined,

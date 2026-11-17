@@ -4,7 +4,7 @@ import type { AuthenticatedUser } from "../../middlewares/auth.middleware";
 import { db } from "../../prisma/db";
 import { ApiError } from "../../utils/ApiError";
 import { ApiResponse } from "../../utils/ApiResponse";
-import { env } from "../../config/env";
+import { getRoomAccessInfo } from "../live-classes/live-class.service";
 
 import {
   createBooking,
@@ -201,6 +201,7 @@ export const completeMyBooking = async (
 };
 
 // Live class access endpoint (Section 3.6)
+// Delegates to live-class.service for full access control + signed room token
 export const getBookingLiveClass = async (
   req: Request,
   res: Response
@@ -212,42 +213,13 @@ export const getBookingLiveClass = async (
     throw new ApiError(400, "Invalid booking ID", params.error.flatten().fieldErrors);
   }
 
-  const booking = await getBookingById(params.data.bookingId);
-
-  // Check user participation
-  let isParticipant = false;
-  if (auth.role === "STUDENT") {
-    const student = await db.orm.public.StudentProfile.where({ userId: auth.userId }).first();
-    isParticipant = student?.id === booking.studentId;
-  } else if (auth.role === "TUTOR") {
-    const tutor = await db.orm.public.TutorProfile.where({ userId: auth.userId }).first();
-    isParticipant = tutor?.id === booking.tutorId;
-  } else if (auth.role === "ADMIN") {
-    isParticipant = true;
-  }
-
-  if (!isParticipant) {
-    throw new ApiError(403, "You are not authorized to join this class session");
-  }
-
-  if (booking.status !== "CONFIRMED") {
-    throw new ApiError(400, `Live class is only available for CONFIRMED bookings. Current status: ${booking.status}`);
-  }
-
-  // Generate deterministic secure room credentials
-  const roomId = `tutorlink-room-${booking.id}`;
-  const roomUrl = `${env.CLIENT_URL}/live-class/${roomId}`;
+  const accessInfo = await getRoomAccessInfo(
+    params.data.bookingId,
+    auth.userId,
+    auth.role
+  );
 
   return res.status(200).json(
-    new ApiResponse(200, "Live class access generated successfully", {
-      bookingId: booking.id,
-      roomId,
-      roomUrl,
-      scheduledStartAt: booking.startAt,
-      scheduledEndAt: booking.endAt,
-      durationMin: booking.durationMin,
-      role: auth.role,
-      userId: auth.userId,
-    })
+    new ApiResponse(200, "Live class access granted", accessInfo)
   );
 };

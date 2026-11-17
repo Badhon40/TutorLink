@@ -19,6 +19,8 @@ import notificationRoutes from "./modules/notifications/notification.routes";
 import adminRoutes from "./modules/admin/admin.routes";
 import recommendationRoutes from "./modules/recommendations/recommendation.routes";
 import refundRoutes from "./modules/refunds/refund.routes";
+import liveClassRoutes from "./modules/live-classes/live-class.routes";
+import { getRoomStats } from "./modules/live-classes/live-class.signaling";
 
 const app = express();
 
@@ -83,6 +85,12 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/refunds", refundRoutes);
+app.use("/api/live-classes", liveClassRoutes);
+
+// Live class room diagnostics (admin-useful, no auth so it stays simple)
+app.get("/api/health/live-classes", (_req, res) => {
+  res.status(200).json({ success: true, ...getRoomStats() });
+});
 
 // Global error handler
 app.use(globalErrorHandler);

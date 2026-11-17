@@ -5,7 +5,10 @@ import {
   initiateSslcommerzCheckout,
   verifySslcommerzTransaction,
 } from "./sslcommerz.service";
-import { notifyPaymentSuccess } from "../notifications/telegram.service";
+import {
+  notifyPaymentSuccess,
+  notifyLiveClassLink,
+} from "../notifications/telegram.service";
 import { createNotification } from "../notifications/notification.service";
 
 interface CheckoutContactInput {
@@ -217,6 +220,60 @@ export const handleSslcommerzSuccess = async (payload: Record<string, any>) => {
       "Payment Received",
       `Your payment of ৳${payment.amount} BDT for booking #${payment.bookingId} was successfully processed.`
     );
+  }
+
+  // ── Notify both student and tutor with their personal join links ──
+  try {
+    const booking = await db.orm.public.Payment
+      .where({ id: payment.id })
+      .first()
+      .then(() => db.orm.public.Booking.where({ id: payment.bookingId }).first());
+
+    if (booking) {
+      const [studentProfile, tutorProfile] = await Promise.all([
+        db.orm.public.StudentProfile.where({ id: booking.studentId }).first(),
+        db.orm.public.TutorProfile.where({ id: booking.tutorId }).first(),
+      ]);
+
+      const [studentUser, tutorUser] = await Promise.all([
+        studentProfile
+          ? db.orm.public.User.where({ id: studentProfile.userId }).first()
+          : Promise.resolve(null),
+        tutorProfile
+          ? db.orm.public.User.where({ id: tutorProfile.userId }).first()
+          : Promise.resolve(null),
+      ]);
+
+      const baseJoinUrl = `${env.CLIENT_URL}/live/${booking.id}`;
+
+      await Promise.all([
+        // Notify student
+        studentUser?.phone
+          ? notifyLiveClassLink(studentUser.phone, {
+              bookingId: booking.id,
+              role: "student",
+              otherPartyName: tutorUser?.name ?? "your tutor",
+              scheduledStartAt: booking.startAt,
+              durationMin: booking.durationMin,
+              joinUrl: baseJoinUrl,
+            }).catch(() => null)
+          : Promise.resolve(),
+
+        // Notify tutor
+        tutorUser?.phone
+          ? notifyLiveClassLink(tutorUser.phone, {
+              bookingId: booking.id,
+              role: "tutor",
+              otherPartyName: studentUser?.name ?? "your student",
+              scheduledStartAt: booking.startAt,
+              durationMin: booking.durationMin,
+              joinUrl: baseJoinUrl,
+            }).catch(() => null)
+          : Promise.resolve(),
+      ]);
+    }
+  } catch (err) {
+    console.warn("[LiveClass] Could not send join-link notifications:", err);
   }
 
   return updatedPayment;
